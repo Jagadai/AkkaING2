@@ -1,0 +1,38 @@
+
+services:
+  database:
+    image: postgres:latest
+    container_name: portefeuille-db
+    restart: always
+    environment:
+      POSTGRES_DB: portefeuille
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend  
+      dockerfile: Dockerfile 
+    container_name: portefeuille-backend
+    restart: always
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: jdbc:postgresql://database:5432/portefeuille
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: secret
+    ports:
+      - "8080:8080"
+    command: ["sbt", "run", "com.gestionportefeuille.App"]  
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
